@@ -52,8 +52,8 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
- - 0.1.0: Published to NPM on 2013-03-13.
-    - Initial release. Has an external dependency on the [`dos2unix` utility][dos2unix] being installed!
+ - 0.1.0: Published to NPM on yyyy-mm-dd _(not yet published!)_.
+    - Initial release.
 
 ## License
 Copyright (c) 2013 James M. Greene  
