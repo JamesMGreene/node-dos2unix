@@ -1,4 +1,64 @@
-node-dos2unix
-=============
+[![Build Status](https://travis-ci.org/JamesMGreene/node-dos2unix.png)](https://travis-ci.org/JamesMGreene/node-dos2unix)
 
-A Node.js module to convert text files with DOS line breaks to Unix line breaks, i.e. like using `dos2unix`.
+# dos2unix
+
+A Node.js module to convert text files with DOS line breaks to Unix line breaks, i.e. like using [`dos2unix`][dos2unix].
+The module also supports cross-platform globbing patterns.
+
+## Getting Started
+Install the module with: `npm install dos2unix`
+
+```js
+var converter = require('dos2unix');
+converter.dos2unix('docs/README.txt', function(err) {
+  // Callback!
+});
+```
+
+## Examples
+```js
+// Reference the module
+var converter = require('dos2unix');
+
+// A callback function
+var d2uCallback = function(err) {
+  // Callback!
+};
+
+// Convert line endings of a single non-binary, non-irregular file from
+// '\r\n' to '\n'.
+converter.dos2unix('docs/README.txt', d2uCallback);
+
+// Convert the line endings of multiple non-binary, non-irregular files from
+// '\r\n' to '\n'.
+converter.dos2unix(['docs/README.txt', 'examples/HelloWorld.js'], d2uCallback);
+
+// Convert the line endings of all non-binary and non-irregular files in the
+// 'docs' directory (non-recursively) from '\r\n' to '\n'.
+converter.dos2unix('docs/*', d2uCallback);
+
+// Convert the line endings of all non-binary and non-irregular files under the
+// 'examples' directory (RECURSIVELY) from '\r\n' to '\n'.
+converter.dos2unix('examples/**/*', d2uCallback);
+
+// Convert the line endings of all non-binary and non-irregular files in the
+// 'docs' directory (non-recursively) AND the same type of files under the
+// 'examples' directory (RECURSIVELY) from '\r\n' to '\n'.
+converter.dos2unix(['docs/*', 'examples/**/*'], d2uCallback);
+```
+
+## Contributing
+In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests
+for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
+
+## Release History
+ - 0.1.0: Published to NPM on 2013-03-13.
+    - Initial release. Has an external dependency on the [`dos2unix` utility][dos2unix] being installed!
+
+## License
+Copyright (c) 2013 James M. Greene  
+Licensed under the MIT license.
+
+
+
+[dos2unix]: http://sourceforge.net/projects/dos2unix/?source=dlp "dos2unix site"
