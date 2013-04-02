@@ -60,6 +60,11 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 0.2.2: Published to NPM on 2013-04-02.
+    - Changed tests to write to the OS tmpdir instead of local to the repo, hopefully this fixes
+      the Travis-CI build.
+    - Also patched a globbing issue where all paths were relative to the CWD even if the `glob`
+      command was executed relative to a different directory.
  - 0.2.1: Published to NPM on 2013-04-02.
     - README fixes.
  - 0.2.0: Published to NPM on 2013-04-02.

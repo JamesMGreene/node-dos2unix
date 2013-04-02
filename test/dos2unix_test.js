@@ -2,6 +2,7 @@
 
 // Built-in modules
 var fs = require('fs');
+var os = require('os');
 
 // External modules
 var fsExtra = require('fs-extra');
@@ -23,13 +24,23 @@ process.on('uncaughtException', function(err) {
 });
 
 var _cwd = process.cwd();
+var testDir = __dirname;
+var tmpDir = (os.tmpdir || os.tmpDir)() + '/dos2unix_test/';
+// Dir of pertintent fixtures, relative to `testDir`
+var fixturesDir = 'fixtures/dos2unix/';
+
+var testOptions = {
+  glob: {
+    cwd: tmpDir
+  }
+};
 
 
 // Delete the temporary test data folder
-fsExtra.removeSync('fixtures/tmp');
+fsExtra.removeSync(tmpDir);
 
 // Create a temporary test data folder
-fsExtra.mkdirsSync('fixtures/tmp');
+fsExtra.mkdirsSync(tmpDir);
 
     
 exports['dos2unix'] = {
@@ -40,7 +51,7 @@ exports['dos2unix'] = {
     //console.error = errorLogger.write;
 
     // Change the CWD to: {repo}/test/
-    process.chdir(__dirname);
+    process.chdir(testDir);
     
     // Finish `setUp`
     done();
@@ -70,11 +81,13 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
-    var testFilePath = 'fixtures/tmp/binary.swf';
-    fsExtra.copy('fixtures/dos2unix/binary.swf', testFilePath, function(err) {
+    var testFileName = 'binary.swf';
+    var relativeOrigPath = fixturesDir + testFileName;
+    var fullTempPath = tmpDir + testFileName;
+    fsExtra.copy(relativeOrigPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
-      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
-      dos2unix([testFilePath], null, done);
+      test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
+      dos2unix([testFileName], testOptions, done);
     });
   },
   
@@ -90,11 +103,13 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
-    var testFilePath = 'fixtures/tmp/unix.sh';
-    fsExtra.copy('fixtures/dos2unix/unix.sh', testFilePath, function(err) {
+    var testFileName = 'unix.sh';
+    var relativeOrigPath = fixturesDir + testFileName;
+    var fullTempPath = tmpDir + testFileName;
+    fsExtra.copy(relativeOrigPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
-      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
-      dos2unix([testFilePath], null, done);
+      test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
+      dos2unix([testFileName], testOptions, done);
     });
   },
   
@@ -110,11 +125,13 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
-    var testFilePath = 'fixtures/tmp/dos.sh';
-    fsExtra.copy('fixtures/dos2unix/dos.sh', testFilePath, function(err) {
+    var testFileName = 'dos.sh';
+    var relativeOrigPath = fixturesDir + testFileName;
+    var fullTempPath = tmpDir + testFileName;
+    fsExtra.copy(relativeOrigPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
-      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
-      dos2unix([testFilePath], null, done);
+      test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
+      dos2unix([testFileName], testOptions, done);
     });
   }
 
