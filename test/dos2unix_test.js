@@ -1,126 +1,121 @@
 'use strict';
 
+// Built-in modules
+var fs = require('fs');
+
 // External modules
 var fsExtra = require('fs-extra');
 
 // Internal modules
-var dos2unix = require('../lib/index').dos2unix;
-var Logger = require('./util/logger');
+var dos2unix = require('../index').dos2unix;
+var Logger = require('./test-util/logger');
 
-/*
-  ======== A Handy Little Nodeunit Reference ========
-  https://github.com/caolan/nodeunit
-
-  Test methods:
-    test.expect(numAssertions)
-    test.done()
-  Test assertions:
-    test.ok(value, [message])
-    test.equal(actual, expected, [message])
-    test.notEqual(actual, expected, [message])
-    test.deepEqual(actual, expected, [message])
-    test.notDeepEqual(actual, expected, [message])
-    test.strictEqual(actual, expected, [message])
-    test.notStrictEqual(actual, expected, [message])
-    test.throws(block, [error], [message])
-    test.doesNotThrow(block, [error], [message])
-    test.ifError(value)
-*/
-
-var consoleMethods = {
+// Override the `console.log` and `console.error` methods
+var _console = {
   log: console.log,
   error: console.error
 };
-
 var logLogger = new Logger();
 var errorLogger = new Logger();
 
-exports['dos2unix'] = {
-  setUp: function(done) {
-    // setup here
-    console.log = logLogger.write;
-    console.error = errorLogger.write;
+process.on('uncaughtException', function(err) {
+  console.error('Uncaught exception: ' + (err.stack || err));
+});
+
+var _cwd = process.cwd();
+
+
+// Delete the temporary test data folder
+fsExtra.removeSync('fixtures/tmp');
+
+// Create a temporary test data folder
+fsExtra.mkdirsSync('fixtures/tmp');
+
     
-    fsExtra.mkdirs('fixtures/tmp', function(err) {
-      if (err) {
-        throw err;
-      }
-      done();
-    });
+exports['dos2unix'] = {
+
+  setUp: function(done) {
+    // Redirect the console methods to buffering loggers for testing purposes
+    //console.log = logLogger.write;
+    //console.error = errorLogger.write;
+
+    // Change the CWD to: {repo}/test/
+    process.chdir(__dirname);
+    
+    // Finish `setUp`
+    done();
   },
+  
   tearDown: function(done) {
     // teardown here
-    console.log = consoleMethods.log;
-    console.error = consoleMethods.error;
-    
-    fsExtra.remove('fixtures/tmp', function(err) {
-      if (err) {
-        throw err;
-      }
-      done();
-    });
+    console.log = _console.log;
+    console.error = _console.error;
+
+    // Revert the CWD
+    process.chdir(_cwd);
+
+    // Finish `tearDown`
+    done();
   },
-  'binary': function(test) {
-    test.expect(2);
+  
+  'Binary - skip file': function(test) {
+    test.expect(3);
     
-    // tests here
     var done = function(err) {
-      consoleMethods.log('\nBinary stdout: ' + logLogger.flush().join('\n'));
-      consoleMethods.error('\nBinary stderr: ' + errorLogger.flush().join('\n'));
-      test.ok(!err);
+      _console.log('\nBinary stdout: ' + logLogger.flush().join('\n'));
+      _console.error('\nBinary stderr: ' + errorLogger.flush().join('\n'));
+      if (err) {
+        _console.error(err.stack || err);
+      }
+      test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
     var testFilePath = 'fixtures/tmp/binary.swf';
-    var opts = {
-      glob: {
-        cwd: __dirname
-      }
-    };
-    fsExtra.copy('fixtures/binary.swf', testFilePath, function(err) {
-      test.ok(!err);
-      dos2unix([testFilePath], opts, done);
+    fsExtra.copy('fixtures/dos2unix/binary.swf', testFilePath, function(err) {
+      test.ok(!err, 'Error copying test file');
+      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
+      dos2unix([testFilePath], null, done);
     });
   },
-  'good': function(test) {
-    test.expect(2);
+  
+  'UNIX - skip file': function(test) {
+    test.expect(3);
     
-    // tests here
     var done = function(err) {
-      consoleMethods.log('\nGood stdout: ' + logLogger.flush().join('\n'));
-      consoleMethods.error('\nGood stderr: ' + errorLogger.flush().join('\n'));
-      test.ok(!err);
+      _console.log('\nGood stdout: ' + logLogger.flush().join('\n'));
+      _console.error('\nGood stderr: ' + errorLogger.flush().join('\n'));
+      if (err) {
+        _console.error(err.stack || err);
+      }
+      test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
-    var testFilePath = 'fixtures/tmp/good.sh';
-    var opts = {
-      glob: {
-        cwd: __dirname
-      }
-    };
-    fsExtra.copy('fixtures/good.sh', testFilePath, function(err) {
-      test.ok(!err);
-      dos2unix([testFilePath], opts, done);
+    var testFilePath = 'fixtures/tmp/unix.sh';
+    fsExtra.copy('fixtures/dos2unix/unix.sh', testFilePath, function(err) {
+      test.ok(!err, 'Error copying test file');
+      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
+      dos2unix([testFilePath], null, done);
     });
   },
-  'bad': function(test) {
-    test.expect(2);
+  
+  'DOS - convert file to UNIX': function(test) {
+    test.expect(3);
     
-    // tests here
     var done = function(err) {
-      consoleMethods.log('\nBad stdout: ' + logLogger.flush().join('\n'));
-      consoleMethods.error('\nBad stderr: ' + errorLogger.flush().join('\n'));
-      test.ok(!err);
+      _console.log('\nBad stdout: ' + logLogger.flush().join('\n'));
+      _console.error('\nBad stderr: ' + errorLogger.flush().join('\n'));
+      if (err) {
+        _console.error(err.stack || err);
+      }
+      test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
       test.done();
     };
-    var testFilePath = 'fixtures/tmp/bad.sh';
-    var opts = {
-      glob: {
-        cwd: __dirname
-      }
-    };
-    fsExtra.copy('fixtures/bad.sh', testFilePath, function(err) {
-      test.ok(!err);
-      dos2unix([testFilePath], opts, done);
+    var testFilePath = 'fixtures/tmp/dos.sh';
+    fsExtra.copy('fixtures/dos2unix/dos.sh', testFilePath, function(err) {
+      test.ok(!err, 'Error copying test file');
+      test.ok(fs.existsSync(testFilePath), 'Copied file does not exist');
+      dos2unix([testFilePath], null, done);
     });
   }
+
 };

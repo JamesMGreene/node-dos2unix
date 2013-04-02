@@ -10,5 +10,5 @@
 
 // Exports
 module.exports = {
-  dos2unix: require('./dos2unix')
+  dos2unix: require('./lib/dos2unix')
 };
