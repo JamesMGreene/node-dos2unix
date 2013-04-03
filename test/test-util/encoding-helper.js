@@ -17,9 +17,21 @@ function charFromByte(oneByte, bom) {
   }
 }
 
-function asOctet(oneByte) {
-  return '0x' + oneByte.toString(16).toUpperCase();
-}
+var asOctet = (function() {
+  function pad2(s) {
+    var str = s || '';
+    var missingLen = 2 - (str || '').length;
+    if (missingLen > 0) {
+      return (new Array(missingLen + 1)).join('0') + str;
+    }
+    return str;
+  }
+
+  return function(oneByte) {
+    return '0x' + pad2(oneByte.toString(16)).toUpperCase();
+  };
+})();
+
 
 module.exports = {
   charFromByte: charFromByte,
