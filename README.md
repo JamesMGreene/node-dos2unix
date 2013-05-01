@@ -85,6 +85,8 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 1.0.1: Published to NPM on 2013-05-01.
+    - Converted 1 stray `console.error` call to an event emission as intended.
  - 1.0.0: Published to NPM on 2013-05-01.
     - Completely remade: redid the whole API to be an EventEmitter, gutted the implementation, etc.
  - 0.3.0: Published to NPM on 2013-04-03.
