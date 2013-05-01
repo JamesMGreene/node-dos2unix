@@ -9,8 +9,7 @@ var path = require('path');
 var fsExtra = require('fs-extra');
 
 // Internal modules
-var dos2unix = require('../index').dos2unix;
-var Logger = require('./test-util/logger');
+var dos2unix = require('../lib/dos2unix');
 
 
 // Convert a Buffer into a ByteArray
@@ -21,13 +20,6 @@ var toByteArray = (function() {
   };
 })();
 
-// Override the `console.log` and `console.error` methods
-var _console = {
-  log: console.log,
-  error: console.error
-};
-var logLogger = new Logger();
-var errorLogger = new Logger();
 
 process.on('uncaughtException', function(err) {
   console.error('Uncaught exception: ' + (err.stack || err));
@@ -57,10 +49,6 @@ fsExtra.mkdirsSync(tmpDir);
 exports['dos2unix'] = {
 
   setUp: function(done) {
-    // Redirect the console methods to buffering loggers for testing purposes
-    console.log = logLogger.write;
-    console.error = errorLogger.write;
-
     // Change the CWD to: {repo}/test/
     process.chdir(testDir);
     
@@ -69,10 +57,6 @@ exports['dos2unix'] = {
   },
   
   tearDown: function(done) {
-    // teardown here
-    console.log = _console.log;
-    console.error = _console.error;
-
     // Revert the CWD
     process.chdir(_cwd);
 
@@ -81,137 +65,256 @@ exports['dos2unix'] = {
   },
   
   'Binary - skip file': function(test) {
-    test.expect(8);
+    test.expect(17);
 
     var testFileName = 'binary.swf';
     var origPath = path.resolve(fixturesDir + testFileName);
     var fullTempPath = path.resolve(tmpDir + testFileName);
     var expectedPath = path.resolve(expectedDir + testFileName);
-
-    var expectedStdOut = ['Skipping suspected binary file: ' + path.normalize(fullTempPath)];
-    var expectedStdErr = [];
+    
+    var eventOrder = 0;
+    var expectedResults = {
+      'error': 0,
+      'skip': 1,
+      'fix': 0
+    };
 
     fsExtra.copy(origPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      dos2unix([testFileName], testOptions, function(err) {
-        if (err) {
-          _console.error(err.stack || err);
-        }
-        test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
-        test.deepEqual(logLogger.flush(), expectedStdOut, '`console.log` output did not match expected');
-        test.deepEqual(errorLogger.flush(), expectedStdErr, '`console.error` output did not match expected');
+      var d2u = new dos2unix(testOptions)
+        .on('start', function() {
+          test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
+        })
+        .on('processing.start', function(data) {
+          test.strictEqual(eventOrder++, 1, 'Step was not called in the expected order: "processing.start"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('processing.skip', function(data) {
+          test.strictEqual(eventOrder++, 2, 'Step was not called in the expected order: "processing.skip"');
+          test.ok(data, 'Received a data object');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+          test.strictEqual(data.message, 'Skipping suspected binary file', 'Message did not match expected');
+          test.strictEqual(Object.keys(data).length, 2, 'data object does not contain unexpected properties');
 
-        // Actually verify file was NOT modified
-        var actualByteArr = toByteArray(fs.readFileSync(fullTempPath));
-        test.ok(actualByteArr.length > 0, 'File contents should not be empty.');
-        test.deepEqual(
-          actualByteArr,
-          toByteArray(fs.readFileSync(origPath)),
-          'File contents should be unmodified from the original state.'
-        );
-        test.deepEqual(
-          actualByteArr,
-          toByteArray(fs.readFileSync(expectedPath)),
-          'File contents should match the expected file contents.'
-        );
-
-        test.done();
-      });
+          // Actually verify file was NOT modified
+          var actualByteArr = toByteArray(fs.readFileSync(fullTempPath));
+          test.ok(actualByteArr.length > 0, 'File contents should not be empty.');
+          test.deepEqual(
+            actualByteArr,
+            toByteArray(fs.readFileSync(origPath)),
+            'File contents should be unmodified from the original state.'
+          );
+          test.deepEqual(
+            actualByteArr,
+            toByteArray(fs.readFileSync(expectedPath)),
+            'File contents should match the expected file contents.'
+          );
+        })
+        .on('convert.start', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('convert.error', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('convert.end', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('processing.error', function(data) {
+          // Should not get here
+          test.ok(false, 'There was an unexpected conversion error: ' + JSON.stringify(data));
+        })
+        .on('processing.end', function(data) {
+          test.strictEqual(eventOrder++, 3, 'Step was not called in the expected order: "processing.end"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('error', function(err) {
+          // Should not get here
+          console.error(err);
+          test.ok(false, 'Error converting file from dos2unix: ' + err);
+          test.done();
+        })
+        .on('end', function(data) {
+          test.strictEqual(eventOrder++, 4, 'Step was not called in the expected order: "end"');
+          test.deepEqual(data, expectedResults, 'Final processing results did not match the expected');
+          test.done();
+        });
+      d2u.process([testFileName]);
     });
   },
   
   'UNIX - skip file': function(test) {
-    test.expect(8);
+    test.expect(17);
     
     var testFileName = 'unix.sh';
     var origPath = path.resolve(fixturesDir + testFileName);
     var fullTempPath = path.resolve(tmpDir + testFileName);
     var expectedPath = path.resolve(expectedDir + testFileName);
-
-    var expectedStdOut = ['Skipping file that does not need fixing: ' + path.normalize(fullTempPath)];
-    var expectedStdErr = [];
+    
+    var eventOrder = 0;
+    var expectedResults = {
+      'error': 0,
+      'skip': 1,
+      'fix': 0
+    };
 
     fsExtra.copy(origPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      dos2unix([testFileName], testOptions, function(err) {
-        if (err) {
-          _console.error(err.stack || err);
-        }
-        test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
-        test.deepEqual(logLogger.flush(), expectedStdOut, '`console.log` output did not match expected');
-        test.deepEqual(errorLogger.flush(), expectedStdErr, '`console.error` output did not match expected');
+      var d2u = new dos2unix(testOptions)
+        .on('start', function() {
+          test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
+        })
+        .on('processing.start', function(data) {
+          test.strictEqual(eventOrder++, 1, 'Step was not called in the expected order: "processing.start"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('processing.skip', function(data) {
+          test.strictEqual(eventOrder++, 2, 'Step was not called in the expected order: "processing.skip"');
+          test.ok(data, 'Received a data object');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+          test.strictEqual(data.message, 'Skipping file with all correct line endings', 'Message did not match expected');
+          test.strictEqual(Object.keys(data).length, 2, 'data object does not contain unexpected properties');
 
-        // Actually verify file was NOT modified
-        var actualByteArr = toByteArray(fs.readFileSync(fullTempPath));
-        test.ok(actualByteArr.length > 0, 'File contents should not be empty.');
-        test.deepEqual(
-          actualByteArr,
-          toByteArray(fs.readFileSync(origPath)),
-          'File contents should be unmodified from the original state.'
-        );
-        test.deepEqual(
-          actualByteArr,
-          toByteArray(fs.readFileSync(expectedPath)),
-          'File contents should match the expected file contents.'
-        );
-
-        test.done();
-      });
+          // Actually verify file was NOT modified
+          var actualByteArr = toByteArray(fs.readFileSync(fullTempPath));
+          test.ok(actualByteArr.length > 0, 'File contents should not be empty.');
+          test.deepEqual(
+            actualByteArr,
+            toByteArray(fs.readFileSync(origPath)),
+            'File contents should be unmodified from the original state.'
+          );
+          test.deepEqual(
+            actualByteArr,
+            toByteArray(fs.readFileSync(expectedPath)),
+            'File contents should match the expected file contents.'
+          );
+        })
+        .on('convert.start', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('convert.error', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('convert.end', function(data) {
+          // Should not get here
+          test.ok(false, 'File was not skipped but should have been: ' + JSON.stringify(data));
+        })
+        .on('processing.error', function(data) {
+          // Should not get here
+          test.ok(false, 'There was an unexpected conversion error: ' + JSON.stringify(data));
+        })
+        .on('processing.end', function(data) {
+          test.strictEqual(eventOrder++, 3, 'Step was not called in the expected order: "processing.end"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('error', function(err) {
+          // Should not get here
+          console.error(err);
+          test.ok(false, 'Error converting file from dos2unix: ' + err);
+          test.done();
+        })
+        .on('end', function(data) {
+          test.strictEqual(eventOrder++, 4, 'Step was not called in the expected order: "end"');
+          test.deepEqual(data, expectedResults, 'Final processing results did not match the expected');
+          test.done();
+        });
+      d2u.process([testFileName]);
     });
   },
   
   'DOS - convert file to UNIX': function(test) {
-    test.expect(13);
+    test.expect(24);
 
     var testFileName = 'dos.sh';
     var origPath = path.resolve(fixturesDir + testFileName);
     var fullTempPath = path.resolve(tmpDir + testFileName);
     var expectedPath = path.resolve(expectedDir + testFileName);
 
-    var expectedStdOut = [
-      'File needs fixing: ' + fullTempPath,
-      'Converting line endings from "\\r\\n" to "\\n" in file: ' + fullTempPath,
-      'Successfully rewrote file: ' + fullTempPath
-    ];
-    var expectedStdErr = [];
+    var eventOrder = 0;
+    var expectedResults = {
+      'error': 0,
+      'skip': 0,
+      'fix': 1
+    };
 
     fsExtra.copy(origPath, fullTempPath, function(err) {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      dos2unix([testFileName], testOptions, function(err) {
-        if (err) {
-          _console.error(err.stack || err);
-        }
-        test.ok(!err, 'Error converting file from dos2unix: ' + ((err && err.stack) || null));
-        test.deepEqual(logLogger.flush(), expectedStdOut, '`console.log` output did not match expected');
-        test.deepEqual(errorLogger.flush(), expectedStdErr, '`console.error` output did not match expected');
+      var d2u = new dos2unix(testOptions)
+        .on('start', function() {
+          test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
+        })
+        .on('processing.start', function(data) {
+          test.strictEqual(eventOrder++, 1, 'Step was not called in the expected order: "processing.start"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('processing.skip', function(data) {
+          // Should not get here
+          test.ok(false, 'File was skipped but should not have been: ' + JSON.stringify(data));
+        })
+        .on('convert.start', function(data) {
+          test.strictEqual(eventOrder++, 2, 'Step was not called in the expected order: "convert.start"');
+          test.ok(data, 'Received a data object');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('convert.error', function(data) {
+          // Should not get here
+          test.ok(false, 'File conversion unexpectedly failed: ' + JSON.stringify(data));
+        })
+        .on('convert.end', function(data) {
+          test.strictEqual(eventOrder++, 3, 'Step was not called in the expected order: "convert.end"');
+          test.ok(data, 'Received a data object');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+          test.strictEqual(Object.keys(data).length, 1, 'data object does not contain unexpected properties');
 
-        var actualBuffer = fs.readFileSync(fullTempPath);
-        var actualByteArr = toByteArray(actualBuffer);
-        var expectedByteArr = toByteArray(fs.readFileSync(expectedPath));
-        var originalByteArr = toByteArray(fs.readFileSync(origPath));
-        var originalByteArrMinusCRs = originalByteArr.filter(function(b) {
-          // Same as `originalByteArr` except for having all carriage returns removed
-          return b !== 0x0D;
+          var actualBuffer = fs.readFileSync(fullTempPath);
+          var actualByteArr = toByteArray(actualBuffer);
+          var expectedByteArr = toByteArray(fs.readFileSync(expectedPath));
+          var originalByteArr = toByteArray(fs.readFileSync(origPath));
+          var originalByteArrMinusCRs = originalByteArr.filter(function(b) {
+            // Same as `originalByteArr` except for having all carriage returns removed
+            return b !== 0x0D;
+          });
+
+          // Actually verify file WAS modified correctly
+          test.ok(actualBuffer.length > 0, 'File contents (buffer) should not be empty.');
+          test.ok(actualByteArr.length > 0, 'File contents (byte array) should not be empty.');
+          test.strictEqual(actualByteArr.indexOf(0x0D), -1, 'File contents should not contain carriage returns.');
+          test.notStrictEqual(actualByteArr.indexOf(0x0A), -1, 'File contents should still contain line feeds.');
+          test.notDeepEqual(actualByteArr, originalByteArr, 'File contents should be modified from the original state.');
+          test.ok(originalByteArrMinusCRs.length < originalByteArr.length, 'File contents should contain less bytes than the original.');
+          test.deepEqual(expectedByteArr, originalByteArrMinusCRs, 'Expected file contents should be the same as the original but minus carriage returns.');
+          test.deepEqual(actualByteArr, expectedByteArr, 'File contents should match the expected file contents.');
+        })
+        .on('processing.error', function(data) {
+          // Should not get here
+          test.ok(false, 'There was an unexpected conversion error: ' + JSON.stringify(data));
+        })
+        .on('processing.end', function(data) {
+          test.strictEqual(eventOrder++, 4, 'Step was not called in the expected order: "processing.end"');
+          test.strictEqual(data.file, fullTempPath, 'File path did not match expected');
+        })
+        .on('error', function(err) {
+          // Should not get here
+          console.error(err);
+          test.ok(false, 'Error converting file from dos2unix: ' + err);
+          test.done();
+        })
+        .on('end', function(data) {
+          test.strictEqual(eventOrder++, 5, 'Step was not called in the expected order: "end"');
+          test.deepEqual(data, expectedResults, 'Final processing results did not match the expected');
+          test.done();
         });
-
-        // Actually verify file WAS modified correctly
-        test.ok(actualBuffer.length > 0, 'File contents (buffer) should not be empty.');
-        test.ok(actualByteArr.length > 0, 'File contents (byte array) should not be empty.');
-        test.strictEqual(actualByteArr.indexOf(0x0D), -1, 'File contents should not contain carriage returns.');
-        test.notStrictEqual(actualByteArr.indexOf(0x0A), -1, 'File contents should still contain line feeds.');
-        test.notDeepEqual(actualByteArr, originalByteArr, 'File contents should be modified from the original state.');
-        test.ok(originalByteArrMinusCRs.length < originalByteArr.length, 'File contents should contain less bytes than the original.');
-        test.deepEqual(expectedByteArr, originalByteArrMinusCRs, 'Expected file contents should be the same as the original but minus carriage returns.');
-        test.deepEqual(actualByteArr, expectedByteArr, 'File contents should match the expected file contents.');
-
-        test.done();
-      });
+      d2u.process([testFileName]);
     });
   }
 

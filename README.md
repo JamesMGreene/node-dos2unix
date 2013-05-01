@@ -9,42 +9,58 @@ The module also supports cross-platform globbing patterns.
 Install the module with: `npm install dos2unix`
 
 ```js
-var dos2unix = require('dos2unix').dos2unix;
-dos2unix(['docs/README.txt'], function(err) {
-  // Callback!
-});
+var D2UConverter = require('dos2unix').dos2unix;
+var d2u = new D2UConverter({ glob: { cwd: __dirname } })
+  .on('error', function(err) {
+    console.error(err);
+  })
+  .on('end', function(stats) {
+    console.log(stats);
+  });
+d2u.process(['docs/*']);
 ```
 
 ## Examples
 ```js
 // Reference the module
-var converter = require('dos2unix');
+var D2UConverter = new require('dos2unix').dos2unix;
 
-// A callback function
-var d2uCallback = function(err) {
-  // Callback!
+// Setup default options
+var defaultOptions = {
+  glob: {
+    cwd: __dirname
+  }
 };
+
+// Create a new `dos2unix` instance and add important event listeners
+var d2u = new D2UConverter(defaultOptions)
+  .on('error', function(err) {
+    console.error(err);
+  })
+  .on('end', function(stats) {
+    console.log(stats);
+  });
 
 // Convert line endings of a single non-binary, non-irregular file from
 // '\r\n' to '\n'.
-converter.dos2unix(['docs/README.txt'], d2uCallback);
+d2u.process(['docs/README.txt']);
 
 // Convert the line endings of multiple non-binary, non-irregular files from
 // '\r\n' to '\n'.
-converter.dos2unix(['docs/README.txt', 'examples/HelloWorld.js'], d2uCallback);
+d2u.process(['docs/README.txt', 'examples/HelloWorld.js']);
 
 // Convert the line endings of all non-binary and non-irregular files in the
 // 'docs' directory (non-recursively) from '\r\n' to '\n'.
-converter.dos2unix(['docs/*'], d2uCallback);
+d2u.process(['docs/*']);
 
 // Convert the line endings of all non-binary and non-irregular files under the
 // 'examples' directory (RECURSIVELY) from '\r\n' to '\n'.
-converter.dos2unix(['examples/**/*'], d2uCallback);
+d2u.process(['examples/**/*']);
 
 // Convert the line endings of all non-binary and non-irregular files in the
 // 'docs' directory (non-recursively) AND the same type of files under the
 // 'examples' directory (RECURSIVELY) from '\r\n' to '\n'.
-converter.dos2unix(['docs/*', 'examples/**/*'], d2uCallback);
+d2u.process(['docs/*', 'examples/**/*']);
 
 // Override the globbing options (per the `glob` module's documentation)
 var globOptions = {
@@ -52,14 +68,25 @@ var globOptions = {
     cwd: 'docs'
   }
 };
-converter.dos2unix(['*.txt'], globOptions, d2uCallback);
+d2u.process(['*.txt'], globOptions);
 ```
+
+## Events
+ - `start`
+ - `processing.start`
+ - `processing.skip`
+ - `convert.start`
+ - `convert.error` / `convert.end`
+ - `processing.error` / `processing.end`
+ - `error` / `end`
 
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 1.0.0: Published to NPM on 2013-05-01.
+    - Completely remade: redid the whole API to be an EventEmitter, gutted the implementation, etc.
  - 0.3.0: Published to NPM on 2013-04-03.
     - Hardened the unit tests, which led to exposing and fixing a critical bug in the `dos2unix`
       conversion implementation.
