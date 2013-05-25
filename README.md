@@ -85,6 +85,9 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 1.0.2: Published to NPM on 2013-05-25.
+    - Now omitting directories from the glob results as trying to convert their non-existent line
+      endings throws errors.
  - 1.0.1: Published to NPM on 2013-05-01.
     - Converted 1 stray `console.error` call to an event emission as intended.
  - 1.0.0: Published to NPM on 2013-05-01.
