@@ -86,6 +86,10 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 1.1.1: Published to NPM on 2013-05-31.
+    - Set the `maxConcurrency` config default value to `0` ("unlimited"). Also updated a little code
+      so that a `maxConcurrency` config value of `0` or less will result in "unlimited", i.e. process
+      the whole array of globbed files at once.
  - 1.1.0: Published to NPM on 2013-05-31.
     - Added the `maxConcurrency` config options to throttle how many files can be processed
       simultaneously. This helps avoid issues across the board as most systems have an implicit
