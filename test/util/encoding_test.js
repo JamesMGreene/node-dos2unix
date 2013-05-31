@@ -6,8 +6,46 @@ var fs = require('fs');
 // Internal modules
 var encoder = require('../../lib/util/encoding');
 
-// Test helper modules
-var encodingHelper = require('../test-util/encoding-helper');
+// Test helper
+var encodingHelper = (function() {
+  var emptyByte = 0x00;
+
+  function charFromByte(oneByte, bom) {
+    switch (bom) {
+      case 'UTF-32BE':
+        return [emptyByte, emptyByte, emptyByte, oneByte];
+      case 'UTF-32LE':
+        return [oneByte, emptyByte, emptyByte, emptyByte];
+      case 'UTF-16BE':
+        return [emptyByte, oneByte];
+      case 'UTF-16LE':
+        return [oneByte, emptyByte];
+      default:
+        return [oneByte];
+    }
+  }
+
+  var asOctet = (function() {
+    function pad2(s) {
+      var str = s || '';
+      var missingLen = 2 - (str || '').length;
+      if (missingLen > 0) {
+        return (new Array(missingLen + 1)).join('0') + str;
+      }
+      return str;
+    }
+
+    return function(oneByte) {
+      return '0x' + pad2(oneByte.toString(16)).toUpperCase();
+    };
+  })();
+
+  return {
+    charFromByte: charFromByte,
+    asOctet: asOctet
+  };
+
+})();
 
 // DEBUG!
 // Set this to `true` to make the `detectBomFromBuffer` unit tests
@@ -46,7 +84,7 @@ exports['encoding'] = {
     // Finish `tearDown`
     done();
   },
-  
+
   'detectBomFromBuffer: UTF-32BE': function(test) {
     test.expect(1);
 
@@ -74,7 +112,7 @@ exports['encoding'] = {
     test.equal(bom, 'UTF-32BE');
     test.done();
   },
-  
+
   'detectBomFromBuffer: UTF-32LE': function(test) {
     test.expect(1);
 
@@ -102,7 +140,7 @@ exports['encoding'] = {
     test.equal(bom, 'UTF-32LE');
     test.done();
   },
-  
+
   'detectBomFromBuffer: UTF-16BE': function(test) {
     test.expect(1);
 
@@ -130,7 +168,7 @@ exports['encoding'] = {
     test.equal(bom, 'UTF-16BE');
     test.done();
   },
-  
+
   'detectBomFromBuffer: UTF-16LE': function(test) {
     test.expect(1);
 
@@ -158,7 +196,7 @@ exports['encoding'] = {
     test.equal(bom, 'UTF-16LE');
     test.done();
   },
-  
+
   'detectBomFromBuffer: UTF-8': function(test) {
     test.expect(1);
 
@@ -183,7 +221,7 @@ exports['encoding'] = {
     test.equal(bom, 'UTF-8');
     test.done();
   },
-  
+
   'detectBomFromBuffer: UTF-8, no BOM': function(test) {
     test.expect(1);
 
@@ -215,7 +253,7 @@ exports['encoding'] = {
     test.equal(bom, null);
     test.done();
   },
-  
+
   'detectBomFromBuffer: some other encoding with no BOM': function(test) {
     test.expect(1);
 
@@ -230,10 +268,10 @@ exports['encoding'] = {
     test.equal(bom, null);
     test.done();
   },
-  
+
   'detectBom: UTF-32BE': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf32be.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -242,10 +280,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: UTF-32LE': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf32le.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -254,10 +292,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: UTF-16BE': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf16be.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -266,10 +304,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: UTF-16LE': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf16le.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -278,10 +316,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: UTF-8': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf8.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -290,10 +328,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: UTF-8, no BOM': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/utf8-noBom.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -302,10 +340,10 @@ exports['encoding'] = {
       test.done();
     });
   },
-  
+
   'detectBom: some other encoding with no BOM': function(test) {
     test.expect(3);
-    
+
     var testFilePath = 'fixtures/util/encoding/bom/ascii.txt';
     test.ok(fs.existsSync(testFilePath));
     encoder.detectBom(testFilePath, function(err, bom) {
@@ -325,7 +363,7 @@ exports['encoding'] = {
     test.equal(encoder.getBytesPerBom('ASCII'), 0);
     test.done();
   },
-  
+
   'getBytesPerControlChar': function(test) {
     test.expect(6);
     test.equal(encoder.getBytesPerControlChar('UTF-32BE'), 4);
@@ -336,10 +374,10 @@ exports['encoding'] = {
     test.equal(encoder.getBytesPerControlChar('ASCII'), 1);
     test.done();
   },
-  
+
   'isByteSequenceCR': function(test) {
     test.expect(36);
-    
+
     // positive
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'UTF-32BE'), true);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00, 0x00, 0x00], 'UTF-32LE'), true);
@@ -354,43 +392,43 @@ exports['encoding'] = {
     test.equal(encoder.isByteSequenceCR([0x0D], 'UTF-32BE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x0D], 'UTF-32BE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0A], 'UTF-32BE'), false);
-    
+
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x0D], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0A, 0x00, 0x00, 0x00], 'UTF-32LE'), false);
-    
+
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00, 0x00, 0x00], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x0A], 'UTF-16BE'), false);
-    
+
     test.equal(encoder.isByteSequenceCR([0x00, 0x0D], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00, 0x00, 0x00], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceCR([0x0A, 0x00], 'UTF-16LE'), false);
-    
+
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00, 0x00, 0x00], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x0D], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceCR([0x0A], 'UTF-8'), false);
-    
+
     test.equal(encoder.isByteSequenceCR([0x00, 0x00, 0x00, 0x0D], 'ASCII'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00, 0x00, 0x00], 'ASCII'), false);
     test.equal(encoder.isByteSequenceCR([0x00, 0x0D], 'ASCII'), false);
     test.equal(encoder.isByteSequenceCR([0x0D, 0x00], 'ASCII'), false);
     test.equal(encoder.isByteSequenceCR([0x0A], 'ASCII'), false);
-    
+
     test.done();
   },
-  
+
   'isByteSequenceLF': function(test) {
     test.expect(36);
-    
+
     // positive
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'UTF-32BE'), true);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00, 0x00, 0x00], 'UTF-32LE'), true);
@@ -405,43 +443,43 @@ exports['encoding'] = {
     test.equal(encoder.isByteSequenceLF([0x0A], 'UTF-32BE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x0A], 'UTF-32BE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0D], 'UTF-32BE'), false);
-    
+
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x0A], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00], 'UTF-32LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0D, 0x00, 0x00, 0x00], 'UTF-32LE'), false);
-    
+
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00, 0x00, 0x00], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'UTF-16BE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x0D], 'UTF-16BE'), false);
-    
+
     test.equal(encoder.isByteSequenceLF([0x00, 0x0A], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00, 0x00, 0x00], 'UTF-16LE'), false);
     test.equal(encoder.isByteSequenceLF([0x0D, 0x00], 'UTF-16LE'), false);
-    
+
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00, 0x00, 0x00], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x0A], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00], 'UTF-8'), false);
     test.equal(encoder.isByteSequenceLF([0x0D], 'UTF-8'), false);
-    
+
     test.equal(encoder.isByteSequenceLF([0x00, 0x00, 0x00, 0x0A], 'ASCII'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00, 0x00, 0x00], 'ASCII'), false);
     test.equal(encoder.isByteSequenceLF([0x00, 0x0A], 'ASCII'), false);
     test.equal(encoder.isByteSequenceLF([0x0A, 0x00], 'ASCII'), false);
     test.equal(encoder.isByteSequenceLF([0x0D], 'ASCII'), false);
-    
+
     test.done();
   },
-  
+
   'doesByteSequenceSuggestBinary': function(test) {
     var boms = ['UTF-32BE', 'UTF-32LE', 'UTF-16BE', 'UTF-16LE', 'UTF-8', 'ASCII'];
-    
+
     // positive - char with main bytes between 0x01 and 0x19 (inclusive),
     //            EXCEPT for whitespace bytes (0x09, 0x0A, 0x0B, 0x0C, 0x0D)
     var binaryBytes = [
@@ -454,7 +492,7 @@ exports['encoding'] = {
     for (var min = 0x20, max = 0xFF; min <= max; min += 0x01) {
       nonBinaryBytes.push(min);
     }
-    
+
     var getErrorMsg = function(bom, oneByte, byteSequence) {
       return 'BOM was: ' + bom + '\n' +
              'byte was: ' + encodingHelper.asOctet(oneByte) + '\n' +
@@ -470,14 +508,14 @@ exports['encoding'] = {
         var byteSequence = encodingHelper.charFromByte(oneByte, bom);
         test.equal(encoder.doesByteSequenceSuggestBinary(byteSequence, bom), true, getErrorMsg(bom, oneByte, byteSequence));
       });
-      
+
       // Run negative tests
       nonBinaryBytes.forEach(function(oneByte) {
         var byteSequence = encodingHelper.charFromByte(oneByte, bom);
         test.equal(encoder.doesByteSequenceSuggestBinary(byteSequence, bom), false, getErrorMsg(bom, oneByte, byteSequence));
       });
     });
-    
+
     test.done();
   }
 };

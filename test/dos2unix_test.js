@@ -45,17 +45,17 @@ fsExtra.removeSync(tmpDir);
 // Create a temporary test data folder
 fsExtra.mkdirsSync(tmpDir);
 
-    
+
 exports['dos2unix'] = {
 
   setUp: function(done) {
     // Change the CWD to: {repo}/test/
     process.chdir(testDir);
-    
+
     // Finish `setUp`
     done();
   },
-  
+
   tearDown: function(done) {
     // Revert the CWD
     process.chdir(_cwd);
@@ -63,7 +63,7 @@ exports['dos2unix'] = {
     // Finish `tearDown`
     done();
   },
-  
+
   'Binary - skip file': function(test) {
     test.expect(17);
 
@@ -71,7 +71,7 @@ exports['dos2unix'] = {
     var origPath = path.resolve(fixturesDir + testFileName);
     var fullTempPath = path.resolve(tmpDir + testFileName);
     var expectedPath = path.resolve(expectedDir + testFileName);
-    
+
     var eventOrder = 0;
     var expectedResults = {
       'error': 0,
@@ -146,15 +146,15 @@ exports['dos2unix'] = {
       d2u.process([testFileName]);
     });
   },
-  
+
   'UNIX - skip file': function(test) {
     test.expect(17);
-    
+
     var testFileName = 'unix.sh';
     var origPath = path.resolve(fixturesDir + testFileName);
     var fullTempPath = path.resolve(tmpDir + testFileName);
     var expectedPath = path.resolve(expectedDir + testFileName);
-    
+
     var eventOrder = 0;
     var expectedResults = {
       'error': 0,
@@ -229,7 +229,7 @@ exports['dos2unix'] = {
       d2u.process([testFileName]);
     });
   },
-  
+
   'DOS - convert file to UNIX': function(test) {
     test.expect(24);
 

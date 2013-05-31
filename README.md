@@ -29,7 +29,8 @@ var D2UConverter = new require('dos2unix').dos2unix;
 var defaultOptions = {
   glob: {
     cwd: __dirname
-  }
+  },
+  maxConcurrency: 50
 };
 
 // Create a new `dos2unix` instance and add important event listeners
@@ -85,6 +86,13 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
+ - 1.1.0: Published to NPM on 2013-05-29.
+    - Added the `maxConcurrency` config options to throttle how many files can be processed
+      simultaneously. This helps avoid issues across the board as most systems have an implicit
+      number of file handles that can be opened as once. It also provides those running on
+      hardware with limited resources to maintain better control of consumption.
+    - Under the covers: swapped in the `async` module to replace `q`, particularly for its
+      `parallelLimit` function.
  - 1.0.2: Published to NPM on 2013-05-25.
     - Now omitting directories from the glob results as trying to convert their non-existent line
       endings throws errors.

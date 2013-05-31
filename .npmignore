@@ -1,3 +1,11 @@
-node_modules
-test/fixtures/tmp
+npm-debug.log
+.gitattributes
+.gitignore
+.jshintrc
+.npmignore
+.travis.yml
+Gruntfile.js
 
+node_modules
+test
+tests
