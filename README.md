@@ -86,7 +86,7 @@ In lieu of a formal styleguide, take care to maintain the existing coding style.
 for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
- - 1.1.0: Published to NPM on 2013-05-29.
+ - 1.1.0: Published to NPM on 2013-05-31.
     - Added the `maxConcurrency` config options to throttle how many files can be processed
       simultaneously. This helps avoid issues across the board as most systems have an implicit
       number of file handles that can be opened as once. It also provides those running on
