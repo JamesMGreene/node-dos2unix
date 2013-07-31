@@ -9,10 +9,10 @@ var dos2unix = require('../lib/dos2unix'),
   .describe('convert-cr-line-endings', 'convert CR (without LF) to LF - from mac format')
   .demand(1)
   .argv,
-  dos2UnixConverter = new dos2unix({verbose: args.verbose});
+  dos2UnixConverter = new dos2unix({maxConcurrency: 10});
 
 // add feedback
-dos2UnixConverter.on("processing.error", function(arg) { console.log(arg.filename + ":" + arg.message); });
+dos2UnixConverter.on("processing.error", function(arg) { console.log(arg.file + ":" + arg.message); });
 if (args.verbose) {
   dos2UnixConverter.on("processing.skip",  function(arg) { console.log(arg.file + ":" + arg.message); })
   .on("processing.start",  function(arg) { console.log(arg.file + ": Start"); })
