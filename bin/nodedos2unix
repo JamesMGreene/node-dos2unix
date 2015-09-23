@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var dos2unix = require('../lib/dos2unix'),
   args = require('optimist')
   .usage('.\nUsage: nodedos2unix [options] filepattern [filepattern] [filepattern] ...')
