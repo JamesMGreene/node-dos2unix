@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/JamesMGreene/node-dos2unix.png)](https://travis-ci.org/JamesMGreene/node-dos2unix)
+[![Build Status](https://travis-ci.org/JamesMGreene/node-dos2unix.png?branch=master)](https://travis-ci.org/JamesMGreene/node-dos2unix)
 
 # dos2unix
 
