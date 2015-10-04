@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+var dos2unix = require('../lib/dos2unix'),
+  args = require('optimist')
+  .usage('.\nUsage: nodedos2unix [options] filepattern [filepattern] [filepattern] ...')
+  .boolean("verbose")
+  .alias("verbose", "v")
+  .describe('verbose', 'switch on verbose mode')
+  .boolean("convert-cr-line-endings")
+  .alias("convert-cr-line-endings", "mac")
+  .describe('convert-cr-line-endings', 'convert CR (without LF) to LF - from mac format')
+  .demand(1)
+  .argv,
+  dos2UnixConverter = new dos2unix({maxConcurrency: 10});
+
+// add feedback
+dos2UnixConverter.on("processing.error", function(arg) { console.log(arg.file + ":" + arg.message); })
+	.on("processing.skip",  function(arg) { console.log(arg.file + ": " + arg.message); })
+	.on("convert.end",  function(arg) { console.log(arg.file + ": Converted"); });
+
+if (args.verbose) {
+  dos2UnixConverter
+  .on("processing.start",  function(arg) { console.log(arg.file + ": Processing Start"); })
+  .on("processing.end",  function(arg) { console.log(arg.file + ": Processing End"); })
+  .on("convert.start",  function(arg) { console.log(arg.file + ": Convert Start"); })
+}
+
+dos2UnixConverter.process(args._, {convertCrLineEndings: args.convertCrLineEndings});
+
