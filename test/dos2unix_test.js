@@ -9,7 +9,7 @@ var path = require('path');
 var fsExtra = require('fs-extra');
 
 // Internal modules
-var dos2unix = require('../lib/dos2unix');
+var Dos2Unix = require('../lib/dos2unix');
 
 
 // Convert a Buffer into a ByteArray
@@ -83,7 +83,7 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      var d2u = new dos2unix(testOptions)
+      var d2u = new Dos2Unix(testOptions)
         .on('start', function() {
           test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
         })
@@ -166,7 +166,7 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      var d2u = new dos2unix(testOptions)
+      var d2u = new Dos2Unix(testOptions)
         .on('start', function() {
           test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
         })
@@ -249,7 +249,7 @@ exports['dos2unix'] = {
       test.ok(!err, 'Error copying test file');
       test.ok(fs.existsSync(fullTempPath), 'Copied file does not exist');
 
-      var d2u = new dos2unix(testOptions)
+      var d2u = new Dos2Unix(testOptions)
         .on('start', function() {
           test.strictEqual(eventOrder++, 0, 'Step was not called in the expected order: "start"');
         })

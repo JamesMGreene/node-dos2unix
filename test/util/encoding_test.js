@@ -6,6 +6,14 @@ var fs = require('fs');
 // Internal modules
 var encoder = require('../../lib/util/encoding');
 
+function toBuffer(array) {
+  if (Buffer.from) {
+    return Buffer.from(array);  // Node 5.10+
+  } else {
+    return new Buffer(array);   // Deprecated [DEP0005]
+  }
+}
+
 // Test helper
 var encodingHelper = (function() {
   var emptyByte = 0x00;
@@ -88,8 +96,8 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-32BE': function(test) {
     test.expect(1);
 
-    var bomBuffer = new Buffer([0x00, 0x00, 0xFE, 0xFF]);
-    var msgBuffer = new Buffer([
+    var bomBuffer = toBuffer([0x00, 0x00, 0xFE, 0xFF]);
+    var msgBuffer = toBuffer([
       0x00, 0x00, 0x00, 0x55,  /* "U" */
       0x00, 0x00, 0x00, 0x54,  /* "T" */
       0x00, 0x00, 0x00, 0x46,  /* "F" */
@@ -116,8 +124,8 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-32LE': function(test) {
     test.expect(1);
 
-    var bomBuffer = new Buffer([0xFF, 0xFE, 0x00, 0x00]);
-    var msgBuffer = new Buffer([
+    var bomBuffer = toBuffer([0xFF, 0xFE, 0x00, 0x00]);
+    var msgBuffer = toBuffer([
       0x55, 0x00, 0x00, 0x00,  /* "U" */
       0x54, 0x00, 0x00, 0x00,  /* "T" */
       0x46, 0x00, 0x00, 0x00,  /* "F" */
@@ -144,8 +152,8 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-16BE': function(test) {
     test.expect(1);
 
-    var bomBuffer = new Buffer([0xFE, 0xFF]);
-    var msgBuffer = new Buffer([
+    var bomBuffer = toBuffer([0xFE, 0xFF]);
+    var msgBuffer = toBuffer([
       0x00, 0x55,  /* "U" */
       0x00, 0x54,  /* "T" */
       0x00, 0x46,  /* "F" */
@@ -172,8 +180,8 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-16LE': function(test) {
     test.expect(1);
 
-    var bomBuffer = new Buffer([0xFF, 0xFE]);
-    var msgBuffer = new Buffer([
+    var bomBuffer = toBuffer([0xFF, 0xFE]);
+    var msgBuffer = toBuffer([
       0x55, 0x00,  /* "U" */
       0x54, 0x00,  /* "T" */
       0x46, 0x00,  /* "F" */
@@ -200,8 +208,8 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-8': function(test) {
     test.expect(1);
 
-    var bomBuffer = new Buffer([0xEF, 0xBB, 0xBF]);
-    var msgBuffer = new Buffer([
+    var bomBuffer = toBuffer([0xEF, 0xBB, 0xBF]);
+    var msgBuffer = toBuffer([
       0x55,             /* "U" */
       0x54,             /* "T" */
       0x46,             /* "F" */
@@ -225,7 +233,7 @@ exports['encoding'] = {
   'detectBomFromBuffer: UTF-8, no BOM': function(test) {
     test.expect(1);
 
-    var buffer = new Buffer([
+    var buffer = toBuffer([
       0x55,              /* "U" */
       0x54,              /* "T" */
       0x46,              /* "F" */
@@ -257,7 +265,7 @@ exports['encoding'] = {
   'detectBomFromBuffer: some other encoding with no BOM': function(test) {
     test.expect(1);
 
-    var buffer = new Buffer([0x41, 0x53, 0x43, 0x49, 0x49]);  // "ASCII"
+    var buffer = toBuffer([0x41, 0x53, 0x43, 0x49, 0x49]);  // "ASCII"
     (function() {
       // DEBUG
       if (DEBUG_WRITE_OUT_TESTFILES === true) {
