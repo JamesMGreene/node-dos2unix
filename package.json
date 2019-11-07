@@ -32,7 +32,7 @@
     "async": "~0.2.9",
     "glob": "~3.2.1",
     "readable-stream": "~1.0.2",
-    "node.extend": "~1.0.5"
+    "node.extend": "~2.0.2"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.4.3",
